@@ -1,0 +1,33 @@
+name: force-generate
+
+on:
+  workflow_dispatch:
+
+jobs:
+  force-generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: corepack enable
+
+      - run: pnpm install
+
+      - run: wget -O community-listfile.csv https://github.com/wowdev/wow-listfile/releases/latest/download/community-listfile.csv
+
+      - run: pnpm start:force
+        id: build
+
+      - uses: EndBug/add-and-commit@v9
+        if: ${{ steps.build.outputs.updated == 'true' }}
+        with:
+          author_name: GitHub Action
+          author_email: github-actions[bot]@users.noreply.github.com
+          message: |
+            chore: update data to build ${{ steps.build.outputs.build }}
+          add: buildInfo.txt output/*
