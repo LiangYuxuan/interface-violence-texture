@@ -122,6 +122,8 @@ const promises = listFile.map(async (file) => {
 
 await Promise.all(promises);
 
+await fs.writeFile('buildInfo.txt', currBuild);
+
 if (process.env.GITHUB_OUTPUT !== undefined) {
     await fs.writeFile(process.env.GITHUB_OUTPUT, `updated=true\nbuild=${currBuild}\n`, { flag: 'a' });
 }
