@@ -1,7 +1,8 @@
 // Based on https://github.com/WoW-Tools/SereniaBLPLib
+
 /* eslint-disable no-bitwise */
 
-export type DXTFormat = 'DXT1' | 'DXT3' | 'DXT5';
+type DXTFormat = 'DXT1' | 'DXT3' | 'DXT5';
 
 interface DXT565Data {
     value: number,
@@ -170,7 +171,7 @@ const decompressBlock = (data: Uint8Array, offset: number, format: DXTFormat): U
     }
 };
 
-export const decompressImage = (
+const decompressImage = (
     data: Uint8Array,
     width: number,
     height: number,
@@ -216,3 +217,5 @@ export const decompressImage = (
 
     return rgba;
 };
+
+export default decompressImage;

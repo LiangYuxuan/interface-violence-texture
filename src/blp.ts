@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 
-import { decompressImage } from './dxt.ts';
+import decompressImage from './dxt.ts';
 
 type RGBAColor = [number, number, number, number];
 
@@ -68,7 +68,12 @@ export default class BLPReader {
                 const g = view.getUint8(i + 1);
                 const r = view.getUint8(i + 2);
                 const a = view.getUint8(i + 3);
-                this.palette.push([r, g, b, a]);
+                this.palette.push([
+                    r,
+                    g,
+                    b,
+                    a,
+                ]);
             }
         }
     }
@@ -88,7 +93,11 @@ export default class BLPReader {
                 const rgba = new Uint8Array(length * 4);
 
                 for (let i = 0; i < length; i += 1) {
-                    const [r, g, b] = this.palette[data[i]];
+                    const [
+                        r,
+                        g,
+                        b,
+                    ] = this.palette[data[i]];
                     const j = i * 4;
 
                     rgba[j + 0] = r;
