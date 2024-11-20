@@ -1,5 +1,6 @@
 /* eslint-disable import-x/no-unused-modules */
 
+import assert from 'node:assert';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
@@ -8,6 +9,16 @@ import { Jimp } from 'jimp';
 
 import BLPReader from './blp.ts';
 import { latestVersion } from './client.ts';
+
+const prevBuild = await fs.readFile('buildInfo.txt', 'utf-8').catch(() => '0');
+
+const currBuild = latestVersion.version.BuildId;
+assert(currBuild, 'Failed to get current build number');
+
+if (process.argv[2] !== '--force' && prevBuild === currBuild) {
+    console.info(new Date().toISOString(), `[INFO]: Build ${currBuild} is up to date`);
+    process.exit(0);
+}
 
 const client = new CASCClient('us', latestVersion.product, latestVersion.version);
 await client.init();
@@ -110,3 +121,7 @@ const promises = listFile.map(async (file) => {
 });
 
 await Promise.all(promises);
+
+if (process.env.GITHUB_OUTPUT !== undefined) {
+    await fs.writeFile(process.env.GITHUB_OUTPUT, `updated=true\nbuild=${currBuild}\n`, { flag: 'a' });
+}
