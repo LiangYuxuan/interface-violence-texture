@@ -1,3 +1,6 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
 root = true
 
 [*]
@@ -7,25 +10,6 @@ end_of_line = lf
 charset = utf-8
 trim_trailing_whitespace = true
 insert_final_newline = true
-
-[*.xml]
-indent_style = tab
-
-[*.md]
-trim_trailing_whitespace = false
-
-[.luacheckrc]
-indent_style = tab
-
-[{.mailmap,.env,*.sh}]
-end_of_line = lf
-
-[{*.pkgmeta,*.pkgmeta-classic}]
-indent_style = space
-indent_size = 2
-
-[Makefile]
-indent_style = tab
 
 [{package.json,package-lock.json,*.yml,*.yaml}]
 indent_size = 2
