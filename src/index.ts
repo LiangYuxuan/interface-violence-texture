@@ -20,6 +20,10 @@ if (process.argv[2] !== '--force' && prevBuild === currBuild) {
     process.exit(0);
 }
 
+await fs.rm('output', { recursive: true }).catch(() => {
+    // do nothing
+});
+
 const client = new CASCClient('us', latestVersion.product, latestVersion.version);
 await client.init();
 
