@@ -57,9 +57,9 @@ const promises = listFile.map(async (file) => {
         const cKeys = client.getContentKeysByFileDataID(id);
         if (cKeys) {
             // eslint-disable-next-line no-bitwise
-            const enUS = cKeys.find((cKey) => cKey.localeFlags & CASCClient.LocaleFlags.enUS);
+            const enUS = cKeys.find((cKey) => (cKey.localeFlags & CASCClient.LocaleFlags.enUS) > 0);
             // eslint-disable-next-line no-bitwise
-            const zhCN = cKeys.find((cKey) => cKey.localeFlags & CASCClient.LocaleFlags.zhCN);
+            const zhCN = cKeys.find((cKey) => (cKey.localeFlags & CASCClient.LocaleFlags.zhCN) > 0);
 
             if (enUS && zhCN && enUS.cKey !== zhCN.cKey) {
                 console.info(`Processing ${name}`);
