@@ -10,6 +10,15 @@ import { Jimp } from 'jimp';
 import BLPReader from './blp.ts';
 import { latestVersion } from './client.ts';
 
+import type { FileInfo } from '@rhyster/wow-casc-dbc';
+
+interface PendingFile {
+    id: number,
+    name: string,
+    enUS: FileInfo,
+    zhCN: FileInfo,
+}
+
 const prevBuild = await fs.readFile('buildInfo.txt', 'utf-8').catch(() => '0');
 
 const currBuild = latestVersion.version.BuildId;
@@ -36,91 +45,102 @@ const listFile = listFileText
     .split('\n')
     .map((line) => line.trim())
     .filter((line) => line.length > 0)
-    .map((line) => {
+    .map<PendingFile | undefined>((line) => {
         const [idText, name] = line.split(';');
         const id = parseInt(idText, 10);
-        return { id, name };
-    });
 
-const promises = listFile.map(async (file) => {
-    const { id, name } = file;
+        if (
+            name.startsWith('interface/')
+            && !name.startsWith('interface/addons/')
+            && !name.startsWith('interface/cinematics/')
+            && !name.startsWith('interface/framexml/')
+            && !name.startsWith('interface/glues/')
+            && !name.startsWith('interface/gluexml/')
+            && !/^interface\/worldmap\/.*\//.test(name)
+        ) {
+            const cKeys = client.getContentKeysByFileDataID(id);
+            if (cKeys) {
+                const enUS = cKeys
+                    // eslint-disable-next-line no-bitwise
+                    .find((cKey) => (cKey.localeFlags & CASCClient.LocaleFlags.enUS) > 0);
+                const zhCN = cKeys
+                    // eslint-disable-next-line no-bitwise
+                    .find((cKey) => (cKey.localeFlags & CASCClient.LocaleFlags.zhCN) > 0);
 
-    if (
-        name.startsWith('interface/')
-        && !name.startsWith('interface/addons/')
-        && !name.startsWith('interface/cinematics/')
-        && !name.startsWith('interface/framexml/')
-        && !name.startsWith('interface/glues/')
-        && !name.startsWith('interface/gluexml/')
-        && !/^interface\/worldmap\/.*\//.test(name)
-    ) {
-        const cKeys = client.getContentKeysByFileDataID(id);
-        if (cKeys) {
-            // eslint-disable-next-line no-bitwise
-            const enUS = cKeys.find((cKey) => (cKey.localeFlags & CASCClient.LocaleFlags.enUS) > 0);
-            // eslint-disable-next-line no-bitwise
-            const zhCN = cKeys.find((cKey) => (cKey.localeFlags & CASCClient.LocaleFlags.zhCN) > 0);
-
-            if (enUS && zhCN && enUS.cKey !== zhCN.cKey) {
-                console.info(`Processing ${name}`);
-
-                const enUSFilePath = path.join('output', 'enUS', name);
-                await fs.mkdir(path.dirname(enUSFilePath), { recursive: true });
-
-                const [enUSBuffer, zhCNBuffer] = await Promise.all([
-                    client.getFileByContentKey(enUS.cKey),
-                    client.getFileByContentKey(zhCN.cKey),
-                ]);
-
-                if (name.endsWith('.blp')) {
-                    const compareFilePath = path.join('output', 'compare', name.replace(/\.blp$/, '.png'));
-                    await fs.mkdir(path.dirname(compareFilePath), { recursive: true });
-
-                    const enUSImage = new BLPReader(
-                        new Uint8Array(enUSBuffer.buffer),
-                    ).processMipmap(0);
-                    const zhCNImage = new BLPReader(
-                        new Uint8Array(zhCNBuffer.buffer),
-                    ).processMipmap(0);
-
-                    const { width, height } = enUSImage;
-                    const enUSRGBA = enUSImage.rgba;
-                    const zhCNRGBA = zhCNImage.rgba;
-
-                    const buffer = Buffer.alloc(width * 2 * height * 4);
-                    for (let i = 0; i < height; i += 1) {
-                        const originImageOffset = i * width * 4;
-                        const compareImageOffset = i * width * 4 * 2;
-
-                        buffer.set(
-                            enUSRGBA.slice(
-                                originImageOffset,
-                                originImageOffset + width * 4,
-                            ),
-                            compareImageOffset,
-                        );
-
-                        buffer.set(
-                            zhCNRGBA.slice(
-                                originImageOffset,
-                                originImageOffset + width * 4,
-                            ),
-                            compareImageOffset + width * 4,
-                        );
-                    }
-
-                    const image = new Jimp({ data: buffer, width: width * 2, height });
-                    const imageFileBuffer = await image.getBuffer('image/png');
-
-                    await Promise.all([
-                        fs.writeFile(enUSFilePath, enUSBuffer.buffer),
-                        fs.writeFile(compareFilePath, imageFileBuffer),
-                    ]);
-                } else {
-                    await fs.writeFile(enUSFilePath, enUSBuffer.buffer);
+                if (enUS && zhCN && enUS.cKey !== zhCN.cKey) {
+                    return {
+                        id,
+                        name,
+                        enUS,
+                        zhCN,
+                    };
                 }
             }
         }
+
+        return undefined;
+    })
+    .filter((item): item is PendingFile => item !== undefined);
+
+const promises = listFile.map(async (file) => {
+    const { name, enUS, zhCN } = file;
+
+    console.info(`Processing ${name}`);
+
+    const enUSFilePath = path.join('output', 'enUS', name);
+    await fs.mkdir(path.dirname(enUSFilePath), { recursive: true });
+
+    const [enUSBuffer, zhCNBuffer] = await Promise.all([
+        client.getFileByContentKey(enUS.cKey),
+        client.getFileByContentKey(zhCN.cKey),
+    ]);
+
+    if (name.endsWith('.blp')) {
+        const compareFilePath = path.join('output', 'compare', name.replace(/\.blp$/, '.png'));
+        await fs.mkdir(path.dirname(compareFilePath), { recursive: true });
+
+        const enUSImage = new BLPReader(
+            new Uint8Array(enUSBuffer.buffer),
+        ).processMipmap(0);
+        const zhCNImage = new BLPReader(
+            new Uint8Array(zhCNBuffer.buffer),
+        ).processMipmap(0);
+
+        const { width, height } = enUSImage;
+        const enUSRGBA = enUSImage.rgba;
+        const zhCNRGBA = zhCNImage.rgba;
+
+        const buffer = Buffer.alloc(width * 2 * height * 4);
+        for (let i = 0; i < height; i += 1) {
+            const originImageOffset = i * width * 4;
+            const compareImageOffset = i * width * 4 * 2;
+
+            buffer.set(
+                enUSRGBA.slice(
+                    originImageOffset,
+                    originImageOffset + width * 4,
+                ),
+                compareImageOffset,
+            );
+
+            buffer.set(
+                zhCNRGBA.slice(
+                    originImageOffset,
+                    originImageOffset + width * 4,
+                ),
+                compareImageOffset + width * 4,
+            );
+        }
+
+        const image = new Jimp({ data: buffer, width: width * 2, height });
+        const imageFileBuffer = await image.getBuffer('image/png');
+
+        await Promise.all([
+            fs.writeFile(enUSFilePath, enUSBuffer.buffer),
+            fs.writeFile(compareFilePath, imageFileBuffer),
+        ]);
+    } else {
+        await fs.writeFile(enUSFilePath, enUSBuffer.buffer);
     }
 });
 
