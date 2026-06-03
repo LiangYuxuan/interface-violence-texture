@@ -22,5 +22,5 @@
     "jimp": "^1.6.1",
     "tsx": "^4.22.4"
   },
-  "packageManager": "pnpm@11.5.0"
+  "packageManager": "pnpm@11.5.1"
 }
