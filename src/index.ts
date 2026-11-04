@@ -25,7 +25,7 @@ const currBuild = latestVersion.version.BuildId;
 assert(currBuild, 'Failed to get current build number');
 
 if (process.argv[2] !== '--force' && prevBuild === currBuild) {
-    console.info(new Date().toISOString(), `[INFO]: Build ${currBuild} is up to date`);
+    console.info(Temporal.Now.instant().toString(), `[INFO]: Build ${currBuild} is up to date`);
     process.exit(0);
 }
 
@@ -36,9 +36,9 @@ await fs.rm('output', { recursive: true }).catch(() => {
 const client = new CASCClient('us', latestVersion.product, latestVersion.version);
 await client.init();
 
-console.info(new Date().toISOString(), '[INFO]: Loading remote TACT keys');
+console.info(Temporal.Now.instant().toString(), '[INFO]: Loading remote TACT keys');
 await client.loadRemoteTACTKeys();
-console.info(new Date().toISOString(), '[INFO]: Loaded remote TACT keys');
+console.info(Temporal.Now.instant().toString(), '[INFO]: Loaded remote TACT keys');
 
 const listFileText = await fs.readFile('./community-listfile.csv', 'utf-8');
 const listFile = listFileText
@@ -85,7 +85,7 @@ const listFile = listFileText
 const promises = listFile.map(async (file) => {
     const { name, enUS, zhCN } = file;
 
-    console.info(`Processing ${name}`);
+    console.info(Temporal.Now.instant().toString(), `Processing ${name}`);
 
     const enUSFilePath = path.join('output', 'enUS', name);
     await fs.mkdir(path.dirname(enUSFilePath), { recursive: true });
