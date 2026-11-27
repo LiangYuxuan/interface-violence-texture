@@ -13,13 +13,13 @@
   },
   "devDependencies": {
     "@rhyster/eslint-config": "^2.0.43",
-    "@types/node": "^26.6.7",
+    "@types/node": "^26.6.11",
     "eslint": "^10.15.0",
     "typescript": "^6.0.3"
   },
   "dependencies": {
     "@rhyster/wow-casc-dbc": "^2.17.2",
-    "jimp": "^2.1.0",
+    "jimp": "^2.2.0",
     "tsx": "^4.23.15"
   },
   "packageManager": "pnpm@12.23.0"
